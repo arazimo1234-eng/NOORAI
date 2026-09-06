@@ -8,6 +8,9 @@ streamlit-webrtc>=0.47   # continuous mic capture into Python
 streamlit-autorefresh>=1.0   # periodic rerun so the live view updates itself
 faster-whisper>=1.0      # fast CPU inference engine for the live preview pass
 av>=11.0                 # audio frame decoding, streamlit-webrtc's dependency (usually pulled in automatically, pinned here to be explicit)
+huggingface_hub>=0.24    # downloads the pre-converted model from the Hub when
+                         # LIVE_ASR_HF_REPO is set (see colab_convert_and_upload.py) —
+                         # usually already pulled in by transformers, pinned to be explicit
 
 # Only needed to RUN convert_model_for_live.py once (not needed by the
 # deployed app itself — this is a developer-machine, one-time step):
