@@ -28,6 +28,7 @@ Usage:
 # ── stdlib ──────────────────────────────────────────────────────────────────
 import difflib
 import io
+import os
 import random
 import re
 import unicodedata
@@ -239,6 +240,16 @@ def load_asr_pipeline():
 
 @st.cache_resource(show_spinner="Loading Quran text …")
 def load_quran_data():
+    # Self-healing: locally, you run download_quran_data.py once by hand
+    # before starting the app. Streamlit Cloud has no such manual step —
+    # it only ever runs streamlit_app.py — so the very first time this
+    # boots on a fresh deploy (or after Cloud wipes the ephemeral
+    # filesystem on a restart), the data simply isn't there yet. Rather
+    # than requiring a step Cloud can't perform, fetch it here if missing.
+    if not os.path.isdir(QURANJSON_ROOT_DIR) or not os.listdir(QURANJSON_ROOT_DIR):
+        with st.spinner("First-time setup: downloading Quran text data …"):
+            from download_quran_data import download_all
+            download_all(out_dir=QURANJSON_ROOT_DIR)
     return load_quran(QURANJSON_ROOT_DIR)
 
 
