@@ -1,4 +1,4 @@
-"""
+""
 Live Correct — real-time recitation feedback.
 
 WHY THIS FILE EXISTS AND HOW IT WORKS
@@ -72,6 +72,13 @@ LIVE_ASR_MODEL_PATH = os.environ.get(
     "LIVE_ASR_MODEL_PATH",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "live_model_ct2"),
 )
+
+# If you converted the model somewhere other than this machine (e.g. Google
+# Colab, since the conversion itself needs more RAM/disk than a typical dev
+# laptop or the Streamlit Cloud build environment has) and pushed the result
+# to a Hugging Face Hub model repo, set this instead of shipping the model
+# in the repo. See colab_convert_and_upload.py.
+LIVE_ASR_HF_REPO = os.environ.get("LIVE_ASR_HF_REPO", "")
 
 
 class LiveAudioBuffer:
@@ -179,14 +186,38 @@ def load_live_asr_model():
     secretly running at batch speed is worse than one that clearly says
     "not set up yet", because the lag would look like a bug, not a
     missing setup step.
+
+    Resolution order for the model files:
+    1. LIVE_ASR_MODEL_PATH if it already exists locally (fastest — no
+       network needed; this is the case after a Docker build that baked
+       the model in, or on a dev machine that ran the conversion itself).
+    2. Otherwise, if LIVE_ASR_HF_REPO is set, download the converted
+       model from that Hugging Face Hub repo into LIVE_ASR_MODEL_PATH.
+       This is the path for Streamlit Community Cloud, where the
+       conversion itself can't run (not enough RAM/disk/build time) but
+       downloading a few hundred MB of already-converted weights at
+       startup is fine.
+    3. Otherwise, fail loudly with setup instructions.
     """
+    if not os.path.isdir(LIVE_ASR_MODEL_PATH) and LIVE_ASR_HF_REPO:
+        from huggingface_hub import snapshot_download
+        snapshot_download(
+            repo_id=LIVE_ASR_HF_REPO,
+            local_dir=LIVE_ASR_MODEL_PATH,
+            token=os.environ.get("HF_TOKEN") or None,  # only needed for a private repo
+        )
+
     if not os.path.isdir(LIVE_ASR_MODEL_PATH):
         raise RuntimeError(
-            f"Live ASR model not found at '{LIVE_ASR_MODEL_PATH}'. "
-            "Live Correct needs a CTranslate2-converted copy of the "
-            "recitation model for fast-enough CPU inference — run "
-            "`python convert_model_for_live.py` once (see "
-            "LIVE_CORRECT_SETUP.md), then restart the app."
+            f"Live ASR model not found at '{LIVE_ASR_MODEL_PATH}', and no "
+            "LIVE_ASR_HF_REPO is set to download it from. Live Correct "
+            "needs a CTranslate2-converted copy of the recitation model "
+            "for fast-enough CPU inference. If you have a machine with "
+            "enough RAM/disk, run `python convert_model_for_live.py` "
+            "once (see LIVE_CORRECT_SETUP.md). If not, run "
+            "colab_convert_and_upload.py on Google Colab (free) and set "
+            "LIVE_ASR_HF_REPO to where it uploads the result, then "
+            "restart the app."
         )
     from faster_whisper import WhisperModel
     return WhisperModel(LIVE_ASR_MODEL_PATH, device="cpu", compute_type="int8")
