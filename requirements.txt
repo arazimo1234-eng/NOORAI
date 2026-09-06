@@ -1,0 +1,8 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+streamlit
+transformers
+numpy
+soundfile
+librosa
+psycopg2-binary

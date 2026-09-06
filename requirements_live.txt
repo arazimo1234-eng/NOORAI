@@ -1,0 +1,14 @@
+# Extra dependencies for Live Correct (real-time recitation feedback).
+# Kept separate from requirements.txt on purpose: these add real weight
+# (webrtc's native deps, a second ASR runtime) that most deployments
+# don't need just to run the core app.
+-r requirements.txt
+
+streamlit-webrtc>=0.47   # continuous mic capture into Python
+streamlit-autorefresh>=1.0   # periodic rerun so the live view updates itself
+faster-whisper>=1.0      # fast CPU inference engine for the live preview pass
+av>=11.0                 # audio frame decoding, streamlit-webrtc's dependency (usually pulled in automatically, pinned here to be explicit)
+
+# Only needed to RUN convert_model_for_live.py once (not needed by the
+# deployed app itself — this is a developer-machine, one-time step):
+#   pip install peft ctranslate2 "transformers[torch]"
