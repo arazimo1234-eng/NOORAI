@@ -6,3 +6,7 @@ numpy
 soundfile
 librosa
 psycopg2-binary
+streamlit-webrtc>=0.47
+streamlit-autorefresh>=1.0
+faster-whisper>=1.0
+av>=11.0
